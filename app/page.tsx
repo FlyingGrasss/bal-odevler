@@ -18,7 +18,7 @@ export default async function HomePage() {
         <div className="hero-panel grid gap-8 p-6 sm:p-10 lg:grid-cols-[1fr_21rem] lg:items-end">
           <div>
             <p className="eyebrow text-[#ff9baa]">Bornova Anadolu Lisesi</p>
-            <h1 className="display-title mt-4 max-w-4xl text-white">Notunu paylaş.<br /><span className="text-[#ff8999]">Sınıfını ileri taşı.</span></h1>
+            <h1 className="display-title mt-4 max-w-4xl leading-[1.04] text-white">Notunu paylaş.<br /><span className="text-[#ff8999]">Birlikte sınava hazırlan.</span></h1>
             <p className="mt-6 max-w-2xl text-base font-medium leading-7 text-white/65 sm:text-lg">Sınavlara hazırlanırken ihtiyacın olan ders notları ve öğretmenlerinin sınavda vurguladığı konular tek yerde.</p>
             <div className="mt-7 flex flex-wrap gap-3"><Link href="/notlar" className={buttonStyles({ size: "lg" })}><BookOpen size={19} /> Notları Keşfet</Link><Link href="/paylas" className={buttonStyles({ variant: "outline", size: "lg", className: "border-white/20 bg-white/10 text-white hover:border-white/40 hover:bg-white/15" })}>Not Paylaş <ArrowRight size={18} /></Link></div>
           </div>
@@ -58,7 +58,7 @@ export default async function HomePage() {
 
       <section className="container-shell py-10 sm:py-12">
         <div className="rounded-3xl bg-ink p-6 text-white sm:p-10">
-          <div className="flex items-end justify-between gap-4"><div><p className="eyebrow text-[#ff8da0]">Teneffüs arşivi</p><h2 className="section-title mt-2">Hocalar ne dedi?</h2></div><Link href="/sozler" className="shrink-0 text-sm font-bold text-white/70 hover:text-white">Tüm sözler <ArrowRight className="inline" size={16} /></Link></div>
+          <div className="flex items-end justify-between gap-4"><div><p className="eyebrow text-[#ff8da0]">Sınavda çıkacaklar</p><h2 className="section-title mt-2">Hocalar ne dedi?</h2></div><Link href="/sozler" className="shrink-0 text-sm font-bold text-white/70 hover:text-white">Tüm sözler <ArrowRight className="inline" size={16} /></Link></div>
           <div className="mt-7 grid gap-3 md:grid-cols-3">{quotes.slice(0, 3).map((quote) => <blockquote key={quote.id} className="rounded-2xl border border-white/10 bg-white/5 p-5"><p className="text-lg font-black leading-snug">“{quote.quote}”</p><footer className="mt-4 text-xs font-bold text-white/55">— {quote.teacherName}</footer></blockquote>)}</div>
         </div>
       </section>

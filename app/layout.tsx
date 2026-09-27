@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Suspense } from "react";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { HomeworkHeader, SiteHeader } from "@/components/site-header";
@@ -75,7 +74,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className={`${inter.className} antialiased`}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(siteStructuredData) }} />
         <Providers>
-          {isHomework ? <HomeworkHeader /> : <Suspense fallback={<div className="h-16" aria-hidden="true" />}><SiteHeader /></Suspense>}
+          {isHomework ? <HomeworkHeader /> : <SiteHeader />}
           <main className="site-main">{children}</main>
           <SiteFooter site={isHomework ? "homework" : "notes"} />
         </Providers>

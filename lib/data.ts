@@ -1,6 +1,5 @@
 import "server-only";
 
-import { cache } from "react";
 import { cacheLife, cacheTag } from "next/cache";
 import type { GradeLevel, Prisma, SubmissionStatus } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -16,17 +15,19 @@ export const noteCardInclude = {
 
 export type NoteCardData = Prisma.NoteGetPayload<{ include: typeof noteCardInclude }>;
 
-export const getNote = cache(async (id: string, currentUserId?: string) => {
+export async function getNote(id: string) {
+  "use cache";
+  cacheLife("max");
+  cacheTag(CACHE_TAGS.notes, CACHE_TAGS.note(id));
   const note = await db.note.findFirst({
     where: { id, status: { not: "DRAFT" } },
     include: {
       ...noteCardInclude,
       assets: { orderBy: { sortOrder: "asc" } },
-      votes: currentUserId ? { where: { userId: currentUserId }, select: { id: true } } : false,
     },
   });
   return note;
-});
+}
 
 export async function getHomeData() {
   "use cache";

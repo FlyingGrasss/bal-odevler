@@ -2,11 +2,12 @@ import { Suspense } from "react";
 import { requireUser } from "@/lib/auth";
 import { getActiveSubjects } from "@/lib/data";
 import { SubmissionForms } from "@/components/submission-forms";
+import { SharePageLoading } from "@/components/notes-loading";
 
 export const metadata = { title: "İçerik paylaş", robots: { index: false, follow: false } };
 
 export default function SharePage() {
-  return <Suspense fallback={<div className="container-shell py-10"><div className="paper-card min-h-96 animate-pulse" /></div>}><SharePageContent /></Suspense>;
+  return <Suspense fallback={<SharePageLoading />}><SharePageContent /></Suspense>;
 }
 
 async function SharePageContent() {

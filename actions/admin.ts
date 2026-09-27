@@ -37,11 +37,12 @@ export async function moderateNote(raw: unknown): Promise<ActionResult> {
       reviewedAt: new Date(),
       reviewedById: admin.id,
       publishedAt: parsed.data.decision === "APPROVED" ? new Date() : null,
-      isRecommended: parsed.data.decision === "APPROVED" ? undefined : false,
-      recommendedAt: parsed.data.decision === "APPROVED" ? undefined : null,
+      isRecommended: parsed.data.decision === "APPROVED" ? parsed.data.recommended : false,
+      recommendedAt: parsed.data.decision === "APPROVED" && parsed.data.recommended ? new Date() : null,
     },
   });
   refreshContent();
+  updateTag(CACHE_TAGS.note(note.id));
   revalidatePath(`/notlar/${note.id}`, "page");
   return { success: true, data: undefined };
 }

@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Download, FileText, Share2 } from "lucide-react";
 import { getNote } from "@/lib/data";
-import { getCurrentUser } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { GRADE_LABELS } from "@/lib/constants";
 import { appUrl, formatDate } from "@/lib/utils";
 import { Avatar } from "@/components/avatar";
@@ -21,24 +20,23 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: note.title, description, alternates: { canonical }, openGraph: { title: note.title, description, url: canonical, type: "article" } };
 }
 
-export default function NoteDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  return <Suspense fallback={<div className="container-shell py-10"><div className="paper-card min-h-96 animate-pulse" /></div>}><NoteDetailContent params={params} /></Suspense>;
+export async function generateStaticParams() {
+  const notes = await db.note.findMany({ where: { status: "APPROVED" }, select: { id: true } });
+  return notes.map(({ id }) => ({ id }));
 }
 
-async function NoteDetailContent({ params }: { params: Promise<{ id: string }> }) {
+export default async function NoteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const user = await getCurrentUser();
-  const note = await getNote(id, user?.id);
+  const note = await getNote(id);
   if (!note) notFound();
   const subject = note.subject?.name || note.customSubject || "Diğer";
-  const voted = "votes" in note && Array.isArray(note.votes) && note.votes.length > 0;
   const date = note.submittedAt || note.createdAt;
 
   return (
     <div className="container-shell py-8 sm:py-12">
       <Link href="/notlar" className="inline-flex items-center gap-2 text-sm font-bold text-muted hover:text-bal"><ArrowLeft size={17} /> Notlara dön</Link>
       <div className="mt-5 grid gap-6 lg:grid-cols-[4.5rem_minmax(0,1fr)_17rem]">
-        <aside className="hidden lg:block"><div className="sticky top-24"><VoteButton noteId={note.id} initialCount={note._count.votes} initialVoted={voted} /></div></aside>
+        <aside className="hidden lg:block"><div className="sticky top-24"><VoteButton noteId={note.id} initialCount={note._count.votes} /></div></aside>
         <article className="paper-card overflow-hidden">
           <header className="border-b border-line/80 p-5 sm:p-8">
             <div className="flex flex-wrap gap-2 text-[10px] font-black uppercase tracking-[0.1em]"><span className="rounded-full bg-bal px-3 py-1.5 text-white">{GRADE_LABELS[note.gradeLevel]}</span><span className="rounded-full bg-bal-soft px-3 py-1.5 text-bal">{subject}</span></div>
@@ -46,7 +44,7 @@ async function NoteDetailContent({ params }: { params: Promise<{ id: string }> }
             {note.description ? <p className="mt-5 whitespace-pre-wrap text-base leading-7 text-muted">{note.description}</p> : null}
             <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-3"><Avatar name={note.author.name} picture={note.author.picture} /><div><p className="text-sm font-black">{note.author.name}</p><p className="mt-1 text-xs text-muted">{formatDate(date)}</p></div></div>
-              <div className="flex items-center gap-3 lg:hidden"><VoteButton noteId={note.id} initialCount={note._count.votes} initialVoted={voted} compact /><ShareDialog noteId={note.id} title={note.title} trigger={<><Share2 size={17} /> Paylaş</>} /></div>
+              <div className="flex items-center gap-3 lg:hidden"><VoteButton noteId={note.id} initialCount={note._count.votes} compact /><ShareDialog noteId={note.id} title={note.title} trigger={<><Share2 size={17} /> Paylaş</>} /></div>
             </div>
           </header>
           <div className="space-y-5 p-4 sm:p-8">

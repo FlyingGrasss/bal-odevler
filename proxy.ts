@@ -15,9 +15,16 @@ export async function proxy(request: NextRequest) {
     && Boolean(request.cookies.get(HOMEWORK_WRITER_COOKIE)?.value);
   const writerRedirect = writerHome ? request.nextUrl.clone() : null;
   if (writerRedirect) writerRedirect.pathname = "/odevler/panel";
+  const hasFilterValue = Boolean(
+    request.nextUrl.searchParams.get("q")
+      || request.nextUrl.searchParams.get("sinif")
+      || request.nextUrl.searchParams.get("ders")
+      || (request.nextUrl.searchParams.get("sirala") && request.nextUrl.searchParams.get("sirala") !== "yeni")
+      || (request.nextUrl.searchParams.get("sayfa") && request.nextUrl.searchParams.get("sayfa") !== "1"),
+  );
   const filterRewrite = site === "notes"
     && pathname === "/notlar"
-    && request.nextUrl.searchParams.size > 0;
+    && hasFilterValue;
   const rewritePath = !redirectUrl && !writerRedirect
     ? pathname === "/" && site === "homework"
       ? "/odevler"

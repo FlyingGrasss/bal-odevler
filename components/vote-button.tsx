@@ -33,7 +33,7 @@ export function VoteButton({ noteId, initialCount, initialVoted = false, compact
       aria-label={voted ? "Oyu geri al" : "Nota oy ver"}
       aria-pressed={voted}
       className={cn(
-        "group flex shrink-0 items-center justify-center gap-1 rounded-xl border font-black",
+        "group flex h-fit shrink-0 self-start items-center justify-center gap-1 rounded-xl border font-black",
         compact ? "h-10 min-w-12 flex-row px-2 text-xs" : "w-12 flex-col py-2 text-sm",
         voted ? "border-bal bg-bal text-white" : "border-bal/15 bg-bal-soft/60 text-bal hover:border-bal/35 hover:bg-bal-soft",
         pending && "opacity-60",

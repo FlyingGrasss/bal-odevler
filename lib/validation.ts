@@ -44,6 +44,7 @@ export const subjectInputSchema = z.object({
 export const moderationSchema = z.object({
   id: z.string().min(1),
   decision: z.enum(["APPROVED", "REJECTED"]),
+  recommended: z.boolean().optional().default(false),
   reason: z.string().trim().max(1000).optional().default(""),
 });
 

@@ -36,7 +36,7 @@ export function NotesArchive({ feed, subjects, params, grade, sort }: NotesArchi
       </div>
 
       <form className="paper-card mt-8 grid gap-3 p-4 lg:grid-cols-[1fr_11rem_14rem_10rem_auto]" action="/notlar">
-        <label className="relative"><span className="sr-only">Notlarda ara</span><Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={17} /><input className="field pl-11" name="q" defaultValue={params.q} placeholder="Başlık veya konu ara…" /></label>
+        <label className="relative"><span className="sr-only">Notlarda ara</span><Search className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted" size={17} /><input className="field pr-11" name="q" defaultValue={params.q} placeholder="Başlık veya konu ara…" /></label>
         <label><span className="sr-only">Sınıf</span><select className="field" name="sinif" defaultValue={grade || ""}><option value="">Tüm sınıflar</option>{GRADE_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
         <label><span className="sr-only">Ders</span><select className="field" name="ders" defaultValue={params.ders || ""}><option value="">Tüm dersler</option>{subjects.map((subject) => <option key={subject.id} value={subject.id}>{subject.name}{grade ? "" : ` · ${GRADE_OPTIONS.find((item) => item.value === subject.gradeLevel)?.label}`}</option>)}</select></label>
         <label><span className="sr-only">Sıralama</span><select className="field" name="sirala" defaultValue={sort === "top" ? "top" : "yeni"}><option value="yeni">En yeni</option><option value="top">En çok oy</option></select></label>

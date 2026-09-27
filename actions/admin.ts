@@ -13,11 +13,11 @@ function refreshContent() {
   updateTag(CACHE_TAGS.notes);
   updateTag(CACHE_TAGS.quotes);
   updateTag(CACHE_TAGS.subjects);
-  revalidatePath("/", "page");
-  revalidatePath("/notlar", "page");
-  revalidatePath("/notlar/filtre", "page");
-  revalidatePath("/sozler", "page");
-  revalidatePath("/admin", "page");
+  revalidatePath("/");
+  revalidatePath("/notlar");
+  revalidatePath("/notlar/filtre");
+  revalidatePath("/sozler");
+  revalidatePath("/admin");
 }
 
 export async function moderateNote(raw: unknown): Promise<ActionResult> {

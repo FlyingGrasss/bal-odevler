@@ -25,12 +25,16 @@ type AdminUser = { id: string; email: string; name: string; picture: string | nu
 type AdminHomeworkWriter = HomeworkWriterView & { createdAt: string };
 
 export function AdminDashboard({ status, notes, quotes, subjects, users, homeworkWriters, homework, counts }: { status: SubmissionStatus; notes: AdminNote[]; quotes: AdminQuote[]; subjects: AdminSubject[]; users: AdminUser[]; homeworkWriters: AdminHomeworkWriter[]; homework: HomeworkDto[]; counts: number[] }) {
+  const [activeStatus, setActiveStatus] = useState(status);
+  const visibleNotes = notes.filter((note) => note.status === activeStatus);
+  const visibleQuotes = quotes.filter((quote) => quote.status === activeStatus);
+
   return (
     <Tabs.Root defaultValue="notes">
       <div className="grid gap-3 sm:grid-cols-3"><Stat label="Bekleyen not" value={counts[0]} icon={<BookCheck />} /><Stat label="Bekleyen söz" value={counts[1]} icon={<Quote />} /><Stat label="Yasaklı hesap" value={counts[2]} icon={<ShieldOff />} /></div>
       <Tabs.List className="mt-7 flex gap-1 overflow-x-auto rounded-2xl border border-line bg-card p-1.5"><Tab value="notes" label="Notlar" /><Tab value="quotes" label="Sözler" /><Tab value="subjects" label="Dersler" /><Tab value="users" label="Kullanıcılar" /><Tab value="homework" label="Ödevler" /></Tabs.List>
-      <Tabs.Content value="notes" className="mt-6"><StatusFilters status={status} /><div className="mt-4 space-y-4">{notes.length ? notes.map((note) => <AdminNoteCard key={note.id} note={note} />) : <EmptyAdmin>Bu durumda not yok.</EmptyAdmin>}</div></Tabs.Content>
-      <Tabs.Content value="quotes" className="mt-6"><StatusFilters status={status} /><div className="mt-4 space-y-4">{quotes.length ? quotes.map((quote) => <AdminQuoteCard key={quote.id} quote={quote} />) : <EmptyAdmin>Bu durumda öğretmen sözü yok.</EmptyAdmin>}</div></Tabs.Content>
+      <Tabs.Content value="notes" className="mt-6"><StatusFilters status={activeStatus} onChange={setActiveStatus} /><div className="mt-4 space-y-4">{visibleNotes.length ? visibleNotes.map((note) => <AdminNoteCard key={note.id} note={note} />) : <EmptyAdmin>Bu durumda not yok.</EmptyAdmin>}</div></Tabs.Content>
+      <Tabs.Content value="quotes" className="mt-6"><StatusFilters status={activeStatus} onChange={setActiveStatus} /><div className="mt-4 space-y-4">{visibleQuotes.length ? visibleQuotes.map((quote) => <AdminQuoteCard key={quote.id} quote={quote} />) : <EmptyAdmin>Bu durumda öğretmen sözü yok.</EmptyAdmin>}</div></Tabs.Content>
       <Tabs.Content value="subjects" className="mt-6"><SubjectsPanel subjects={subjects} /></Tabs.Content>
       <Tabs.Content value="users" className="mt-6"><UsersPanel users={users} /></Tabs.Content>
       <Tabs.Content value="homework" className="mt-6"><HomeworkAdminPanel writers={homeworkWriters} homework={homework} /></Tabs.Content>
@@ -41,7 +45,7 @@ export function AdminDashboard({ status, notes, quotes, subjects, users, homewor
 function Stat({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) { return <div className="paper-card flex items-center gap-4 p-5"><span className="grid size-11 place-items-center rounded-xl bg-bal-soft text-bal">{icon}</span><div><p className="text-2xl font-black">{value}</p><p className="text-xs font-bold text-muted">{label}</p></div></div>; }
 function Tab({ value, label }: { value: string; label: string }) { return <Tabs.Trigger value={value} className="h-10 shrink-0 rounded-xl px-4 text-sm font-black text-muted data-[state=active]:bg-bal data-[state=active]:text-white">{label}</Tabs.Trigger>; }
 function EmptyAdmin({ children }: { children: React.ReactNode }) { return <div className="rounded-2xl border border-dashed border-line p-8 text-center text-sm text-muted">{children}</div>; }
-function StatusFilters({ status }: { status: SubmissionStatus }) { return <div className="flex flex-wrap gap-2">{(["PENDING", "APPROVED", "REJECTED"] as SubmissionStatus[]).map((item) => <Link key={item} href={`/admin?durum=${item}`} className={buttonStyles({ variant: status === item ? "primary" : "outline", size: "sm" })}>{STATUS_LABELS[item]}</Link>)}</div>; }
+function StatusFilters({ status, onChange }: { status: SubmissionStatus; onChange: (status: SubmissionStatus) => void }) { return <div className="flex flex-wrap gap-2">{(["PENDING", "APPROVED", "REJECTED"] as SubmissionStatus[]).map((item) => <button key={item} type="button" aria-pressed={status === item} onClick={() => onChange(item)} className={buttonStyles({ variant: status === item ? "primary" : "outline", size: "sm" })}>{STATUS_LABELS[item]}</button>)}</div>; }
 
 function AdminNoteCard({ note }: { note: AdminNote }) {
   const [rejectOpen, setRejectOpen] = useState(false); const [deleteOpen, setDeleteOpen] = useState(false); const [banOpen, setBanOpen] = useState(false); const [reason, setReason] = useState(""); const [pending, startTransition] = useTransition(); const router = useRouter();

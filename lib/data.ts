@@ -143,19 +143,20 @@ export async function getApprovedQuotes() {
   });
 }
 
-export async function getAdminData(status: SubmissionStatus = "PENDING") {
+export async function getAdminData() {
+  const moderationStatuses: SubmissionStatus[] = ["PENDING", "APPROVED", "REJECTED"];
   const [notes, quotes, subjects, users, counts, homeworkData] = await Promise.all([
     db.note.findMany({
-      where: { status },
+      where: { status: { in: moderationStatuses } },
       include: { ...noteCardInclude, assets: { orderBy: { sortOrder: "asc" } } },
       orderBy: { updatedAt: "asc" },
-      take: 100,
+      take: 300,
     }),
     db.teacherQuote.findMany({
-      where: { status },
+      where: { status: { in: moderationStatuses } },
       include: { author: { select: { id: true, name: true, email: true } }, subject: { select: { name: true } } },
       orderBy: { updatedAt: "asc" },
-      take: 100,
+      take: 300,
     }),
     db.subject.findMany({ orderBy: [{ gradeLevel: "asc" }, { sortOrder: "asc" }, { name: "asc" }] }),
     db.user.findMany({

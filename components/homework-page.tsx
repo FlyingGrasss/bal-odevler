@@ -2,10 +2,11 @@
 
 import { Atom, BookHeart, BookOpen, Brain, CalendarDays, Calculator, CheckSquare, EyeOff, FlaskConical, Globe2, Landmark, Leaf, Pencil, Plus, Square, Trash2, type LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState, useSyncExternalStore, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { createHomework, deleteHomework, logoutHomeworkWriter, setHomeworkPast, updateHomework } from "@/actions/homework";
-import { HOMEWORK_SUBJECT_LABELS, HOMEWORK_SUBJECT_OPTIONS } from "@/lib/constants";
+import { COMPLETED_HOMEWORK_COOKIE, COMPLETED_HOMEWORK_COOKIE_MAX_AGE, HOMEWORK_SUBJECT_LABELS, HOMEWORK_SUBJECT_OPTIONS } from "@/lib/constants";
+import { encodeCompletedIds, toggleCompletedId } from "@/lib/homework-completed";
 import { getHomeworkDateStatus } from "@/lib/homework-display";
 import type { HomeworkDto, HomeworkSubjectValue, HomeworkWriterView } from "@/lib/homework-types";
 import { Button } from "@/components/ui/button";
@@ -23,53 +24,61 @@ const SUBJECT_ICONS: Record<HomeworkSubjectValue, LucideIcon> = {
   DIN_KULTURU: BookHeart,
 };
 
-const COMPLETED_STORAGE_KEY = "bal-odevler-tamamlanan";
+const LEGACY_COMPLETED_STORAGE_KEY = "bal-odevler-tamamlanan";
 
-function readCompletedRaw() {
+function writeCompletedCookie(ids: readonly string[]) {
   try {
-    return window.localStorage.getItem(COMPLETED_STORAGE_KEY) ?? "[]";
+    document.cookie = `${COMPLETED_HOMEWORK_COOKIE}=${encodeCompletedIds(ids)}; path=/; max-age=${COMPLETED_HOMEWORK_COOKIE_MAX_AGE}; samesite=lax`;
   } catch {
-    return "[]";
+    // Cookies unavailable (private mode, blocked storage): the checkbox still
+    // toggles for the session, it just will not survive a reload.
   }
 }
 
-function parseCompletedIds(raw: string) {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-function useCompletedHomework() {
-  const subscribe = useCallback((callback: () => void) => {
-    window.addEventListener("storage", callback);
-    return () => window.removeEventListener("storage", callback);
-  }, []);
-  const getSnapshot = useCallback(() => readCompletedRaw(), []);
-  const getServerSnapshot = useCallback(() => "[]", []);
-  const raw = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  const completedIds = useMemo(() => parseCompletedIds(raw), [raw]);
-
-  const toggleCompleted = useCallback((id: string) => {
-    const next = completedIds.includes(id) ? completedIds.filter((item) => item !== id) : [...completedIds, id];
+/**
+ * Moves marks that predate the cookie store into the cookie, once per browser.
+ * Without this those students would see every card expanded for one load, the
+ * one layout shift this page used to have. Re-running is harmless because the
+ * legacy key is cleared as soon as its value has been read successfully.
+ */
+function useLegacyCompletedMigration(serverCompletedIds: readonly string[], adopt: (ids: string[]) => void) {
+  useEffect(() => {
     try {
-      window.localStorage.setItem(COMPLETED_STORAGE_KEY, JSON.stringify(next));
+      const legacy = window.localStorage.getItem(LEGACY_COMPLETED_STORAGE_KEY);
+      if (!legacy) return;
+      const parsed: unknown = JSON.parse(legacy);
+      if (!Array.isArray(parsed)) return;
+      const legacyIds = parsed.filter((id): id is string => typeof id === "string");
+      // Clear the key only once the value has been understood, so a malformed
+      // value is retried on the next visit rather than silently discarded.
+      window.localStorage.removeItem(LEGACY_COMPLETED_STORAGE_KEY);
+      if (!legacyIds.length) return;
+      const merged = Array.from(new Set([...serverCompletedIds, ...legacyIds]));
+      adopt(merged);
+      writeCompletedCookie(merged);
     } catch {
-      // Storage full or unavailable; state still toggles for the session.
+      // Legacy marks are a convenience; losing them is not worth interrupting for.
     }
-    window.dispatchEvent(new Event("storage"));
-  }, [completedIds]);
-
-  return { completedIds, toggleCompleted };
+  }, [serverCompletedIds, adopt]);
 }
 
-export function HomeworkPublicPage({ homework }: { homework: HomeworkDto[] }) {
+export function HomeworkPublicPage({ homework, initialCompletedIds }: { homework: HomeworkDto[]; initialCompletedIds: string[] }) {
   const [showPast, setShowPast] = useState(false);
   const [hideCompleted, setHideCompleted] = useState(false);
-  const { completedIds, toggleCompleted } = useCompletedHomework();
-  const completedSet = useMemo(() => new Set(completedIds), [completedIds]);
+  const [markedIds, setMarkedIds] = useState(initialCompletedIds);
+
+  useLegacyCompletedMigration(initialCompletedIds, setMarkedIds);
+
+  const completedSet = useMemo(() => new Set(markedIds), [markedIds]);
+
+  const toggleCompleted = useCallback(
+    (id: string) => {
+      const next = toggleCompletedId(markedIds, id);
+      writeCompletedCookie(next);
+      setMarkedIds(next);
+    },
+    [markedIds]
+  );
 
   const activeHomework = useMemo(
     () => homework.filter((item) => !item.isPast),
@@ -230,29 +239,36 @@ function HomeworkCard({ item, manage = false, completed = false, onToggleComplet
   const SubjectIcon = SUBJECT_ICONS[item.subject];
 
   if (completed) {
+    // Two rows instead of one: a single row cannot hold the checkbox, subject
+    // and an arbitrarily long due text inside a 320px viewport.
     return (
-      <div className="paper-card flex items-center gap-3 p-3 opacity-75">
-        <button
-          type="button"
-          onClick={onToggleComplete}
-          aria-pressed="true"
-          aria-label="Tamamlanmadı olarak işaretle"
-          className="grid size-8 shrink-0 place-items-center rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100"
-        >
-          <CheckSquare size={16} />
-        </button>
-        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-bal-soft text-bal"><SubjectIcon size={15} /></span>
-        <span className="shrink-0 text-xs font-black text-muted">{HOMEWORK_SUBJECT_LABELS[item.subject]}</span>
-        <span className="min-w-0 flex-1 truncate text-sm font-bold text-muted line-through">{item.title}</span>
-        <span className="flex shrink-0 items-center gap-1.5 text-xs font-bold text-muted"><CalendarDays size={14} aria-hidden="true" />{item.dueText || "bilmem"}</span>
+      <div className="paper-card w-full max-w-full overflow-hidden p-3 opacity-75">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={onToggleComplete}
+            aria-pressed="true"
+            aria-label="Tamamlanmadı olarak işaretle"
+            className="grid size-8 shrink-0 place-items-center rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100"
+          >
+            <CheckSquare size={16} />
+          </button>
+          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-bal-soft text-bal"><SubjectIcon size={15} /></span>
+          <span className="min-w-0 truncate text-xs font-black text-muted">{HOMEWORK_SUBJECT_LABELS[item.subject]}</span>
+          <span className="ml-auto flex max-w-[45%] shrink-0 items-center gap-1.5 text-xs font-bold text-muted">
+            <CalendarDays size={14} aria-hidden="true" className="shrink-0" />
+            <span className="truncate">{item.dueText || "bilmem"}</span>
+          </span>
+        </div>
+        <p className="mt-1.5 min-w-0 truncate pl-10 text-sm font-bold text-muted line-through">{item.title}</p>
       </div>
     );
   }
 
   return (
-    <article className="paper-card flex flex-col p-5 transition-shadow hover:shadow-[0_16px_35px_rgb(16_24_40/10%)]">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
+    <article className="paper-card flex w-full max-w-full flex-col p-5 transition-shadow hover:shadow-[0_16px_35px_rgb(16_24_40/10%)]">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           {onToggleComplete ? (
             <button
               type="button"
@@ -264,9 +280,9 @@ function HomeworkCard({ item, manage = false, completed = false, onToggleComplet
               <Square size={16} />
             </button>
           ) : null}
-          <span className="grid size-11 place-items-center rounded-xl bg-bal-soft text-bal"><SubjectIcon size={21} /></span>
-          <div>
-            <p className="text-xl font-black leading-tight text-bal">{HOMEWORK_SUBJECT_LABELS[item.subject]}</p>
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-bal-soft text-bal"><SubjectIcon size={21} /></span>
+          <div className="min-w-0">
+            <p className="break-words text-xl font-black leading-tight text-bal">{HOMEWORK_SUBJECT_LABELS[item.subject]}</p>
           </div>
         </div>
         {manage ? (
@@ -286,17 +302,17 @@ function HomeworkCard({ item, manage = false, completed = false, onToggleComplet
           </div>
         ) : null}
       </div>
-      <h2 className="mt-5 text-lg font-black leading-snug">{item.title}</h2>
-      {item.description ? <p className="mt-3 whitespace-pre-wrap text-base leading-7 text-muted">{item.description}</p> : null}
-      <div className="mt-auto flex flex-wrap items-center gap-3 pt-6 text-base">
+      <h2 className="mt-5 break-words text-lg font-black leading-snug">{item.title}</h2>
+      {item.description ? <p className="mt-3 whitespace-pre-wrap break-words text-base leading-7 text-muted">{item.description}</p> : null}
+      <div className="mt-auto flex min-w-0 flex-wrap items-center gap-3 pt-6 text-base">
         {item.isPast ? (
           <span className="inline-flex rounded-full bg-stone-200 px-2.5 py-1 text-[10px] font-black uppercase text-stone-700">Geçmiş</span>
         ) : manage && dateStatus ? (
           <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase ${statusClass}`}>{statusLabel}</span>
         ) : null}
-        <span className="inline-flex items-center gap-2 font-black text-bal"><CalendarDays size={18} aria-hidden="true" />{item.dueText || "bilmem"}</span>
+        <span className="inline-flex min-w-0 items-center gap-2 font-black text-bal"><CalendarDays size={18} aria-hidden="true" className="shrink-0" />{item.dueText || "bilmem"}</span>
       </div>
-      {!manage ? <p className="mt-2 text-base text-muted">- {item.writer.name}</p> : null}
+      {!manage ? <p className="mt-2 min-w-0 break-words text-base text-muted">- {item.writer.name}</p> : null}
     </article>
   );
 }

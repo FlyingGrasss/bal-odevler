@@ -21,5 +21,9 @@ export const HOMEWORK_WRITER_SESSION_DAYS = 30;
 export const HOMEWORK_LOGIN_WINDOW_MS = 15 * 60 * 1000;
 export const HOMEWORK_LOGIN_MAX_ATTEMPTS = 10;
 
-export const HOMEWORK_COMPLETED_STORAGE_KEY = "bal-odevler-tamamlanan";
 export const OAUTH_STATE_COOKIE = "bal_odevler-oauth-state";
+
+// Completed homework lives in a cookie rather than localStorage so the server
+// can render each card in its final (collapsed) shape on the first paint.
+export const COMPLETED_HOMEWORK_COOKIE = "bal-odevler-tamamlanan";
+export const COMPLETED_HOMEWORK_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;

@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["balnotes"]
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+
+  @@schema("balnotes")
+}
+
+enum HomeworkSubject {
+  EDEBIYAT
+  MATEMATIK
+  FIZIK
+  KIMYA
+  BIYOLOJI
+  FELSEFE
+  TARIH
+  COGRAFYA
+  DIN_KULTURU
+
+  @@schema("balnotes")
+}
+
+enum HomeworkWriterKind {
+  TEACHER
+  SMART_BOARD
+
+  @@schema("balnotes")
+}
+
+model User {
+  id         String     @id
+  email      String     @unique
+  name       String
+  picture    String?
+  status     UserStatus @default(ACTIVE)
+  banReason  String?
+  bannedAt   DateTime?
+  bannedById String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@index([status])
+  @@map("balnotes_profile_info")
+  @@schema("balnotes")
+}
+
+model HomeworkWriter {
+  id           String             @id @default(cuid())
+  name         String
+  kind         HomeworkWriterKind
+  fixedSubject HomeworkSubject?
+  keyHash      String             @unique
+  isActive     Boolean            @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  sessions HomeworkWriterSession[]
+  homework Homework[]
+
+  @@index([kind, fixedSubject])
+  @@map("homework_writers")
+  @@schema("balnotes")
+}
+
+model HomeworkWriterSession {
+  id        String         @id @default(cuid())
+  writerId  String
+  writer    HomeworkWriter @relation(fields: [writerId], references: [id], onDelete: Cascade)
+  tokenHash String         @unique
+  expiresAt DateTime
+  createdAt DateTime       @default(now())
+  lastUsedAt DateTime?
+
+  @@index([writerId, expiresAt])
+  @@index([expiresAt])
+  @@map("homework_writer_sessions")
+  @@schema("balnotes")
+}
+
+model Homework {
+  id          String         @id @default(cuid())
+  writerId    String
+  writer      HomeworkWriter @relation(fields: [writerId], references: [id], onDelete: Cascade)
+  subject     HomeworkSubject
+  title       String
+  description String?        @db.Text
+  dueText     String
+  dueDate     DateTime?      @db.Date
+  isPast      Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([isPast, dueDate, subject])
+  @@index([writerId, updatedAt])
+  @@map("homework")
+  @@schema("balnotes")
+}
+
+model HomeworkLoginRateLimit {
+  bucketKey   String   @id
+  windowStart DateTime
+  attempts    Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@index([windowStart])
+  @@map("homework_login_rate_limits")
+  @@schema("balnotes")
+}
+
+model oAuthAttempt {
+  stateHash   String   @id
+  codeVerifier String
+  nextPath    String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("oauth_attempts")
+  @@schema("balnotes")
+}

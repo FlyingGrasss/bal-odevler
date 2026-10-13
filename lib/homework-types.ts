@@ -5,6 +5,7 @@ export type HomeworkDto = {
   id: string;
   title: string;
   description: string | null;
+  notDoneStudents: string | null;
   subject: HomeworkSubjectValue;
   dueText: string;
   dueDate: string | null;

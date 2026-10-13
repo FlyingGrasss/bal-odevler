@@ -4,6 +4,7 @@ import { z } from "zod";
 export const homeworkInputSchema = z.object({
   title: z.string().trim().min(2, "Ödev başlığı en az 2 karakter olmalı.").max(120),
   description: z.string().trim().max(2000, "Açıklama en fazla 2000 karakter olabilir.").optional().default(""),
+  notDoneStudents: z.string().trim().max(5000, "Yapmayanlar listesi en fazla 5000 karakter olabilir.").optional().default(""),
   subject: z.enum(HomeworkSubject),
   dueText: z.string().trim().max(160, "Teslim bilgisi en fazla 160 karakter olabilir.").optional().default(""),
   dueDate: z.string().trim().max(10).optional().default(""),
@@ -34,8 +35,8 @@ export const homeworkWriterInputSchema = z.object({
   }
 });
 
-export type HomeworkInput = z.infer<typeof homeworkInputSchema>;
-export type HomeworkWriterInput = z.infer<typeof homeworkWriterInputSchema>;
+export type HomeworkInput = z.input<typeof homeworkInputSchema>;
+export type HomeworkWriterInput = z.input<typeof homeworkWriterInputSchema>;
 
 export function firstZodError(error: z.ZodError) {
   return error.issues[0]?.message || "Bilgileri kontrol edip tekrar deneyin.";

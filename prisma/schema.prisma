@@ -93,6 +93,7 @@ model Homework {
   subject     HomeworkSubject
   title       String
   description String?        @db.Text
+  notDoneStudents String?    @db.Text
   dueText     String
   dueDate     DateTime?      @db.Date
   isPast      Boolean        @default(false)

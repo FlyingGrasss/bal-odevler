@@ -132,6 +132,11 @@ function HomeworkOversight({ writers, homework }: { writers: AdminHomeworkWriter
                 </div>
                 <h3 className="mt-2 font-black">{item.title}</h3>
                 <p className="mt-1 text-xs text-muted">{item.writer.name}</p>
+                {item.notDoneStudents ? (
+                  <p className="mt-1 text-xs font-semibold text-red-700 line-clamp-1">
+                    Ödevi yapmayanlar: {item.notDoneStudents.split("\n").filter(Boolean).join(", ")}
+                  </p>
+                ) : null}
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Button
@@ -176,6 +181,7 @@ function AdminCreateHomeworkDialog({ writers, open, onOpenChange, onSaved }: { w
     const input = {
       title: String(data.get("title") || ""),
       description: String(data.get("description") || ""),
+      notDoneStudents: String(data.get("notDoneStudents") || ""),
       subject: String(data.get("subject") || "") as HomeworkSubjectValue,
       dueText: String(data.get("dueText") || ""),
       dueDate: String(data.get("dueDate") || ""),
@@ -216,6 +222,7 @@ function AdminCreateHomeworkDialog({ writers, open, onOpenChange, onSaved }: { w
           <div><label className="label">Teslim <span className="font-normal text-muted">(isteğe bağlı)</span></label><input className="field" name="dueText" placeholder="Örn. ilk derse veya haftaya salı" maxLength={160} /></div>
           <div><label className="label">Sıralama tarihi <span className="font-normal text-muted">(isteğe bağlı)</span></label><input className="field" name="dueDate" type="date" /></div>
           <div><label className="label">Açıklama <span className="font-normal text-muted">(isteğe bağlı)</span></label><textarea className="field min-h-24" name="description" maxLength={2000} /></div>
+          <div><label className="label">Ödevi yapmayanlar <span className="font-normal text-muted">(isteğe bağlı)</span></label><textarea className="field min-h-24" name="notDoneStudents" placeholder="Örn: Kerem uygur, toprak doğan..." maxLength={5000} /></div>
           <div>
             <label className="inline-flex items-center gap-2 text-sm font-bold text-ink">
               <input type="checkbox" name="isPast" className="size-4 rounded border-line text-bal focus:ring-bal" />
@@ -240,6 +247,7 @@ function AdminHomeworkEditDialog({ writers, item, onClose, onSaved }: { writers:
       const result = await updateHomework(item.id, {
         title: String(data.get("title") || ""),
         description: String(data.get("description") || ""),
+        notDoneStudents: String(data.get("notDoneStudents") || ""),
         subject: String(data.get("subject") || "") as HomeworkSubjectValue,
         dueText: String(data.get("dueText") || ""),
         dueDate: String(data.get("dueDate") || ""),
@@ -270,6 +278,7 @@ function AdminHomeworkEditDialog({ writers, item, onClose, onSaved }: { writers:
           <div><label className="label">Teslim <span className="font-normal text-muted">(isteğe bağlı)</span></label><input className="field" name="dueText" defaultValue={item?.dueText || ""} maxLength={160} /></div>
           <div><label className="label">Sıralama tarihi <span className="font-normal text-muted">(isteğe bağlı)</span></label><input className="field" name="dueDate" type="date" defaultValue={item?.dueDate || ""} /></div>
           <div><label className="label">Açıklama <span className="font-normal text-muted">(isteğe bağlı)</span></label><textarea className="field min-h-24" name="description" defaultValue={item?.description || ""} maxLength={2000} /></div>
+          <div><label className="label">Ödevi yapmayanlar <span className="font-normal text-muted">(isteğe bağlı)</span></label><textarea className="field min-h-24" name="notDoneStudents" defaultValue={item?.notDoneStudents || ""} maxLength={5000} /></div>
           <div>
             <label className="inline-flex items-center gap-2 text-sm font-bold text-ink">
               <input type="checkbox" name="isPast" defaultChecked={item?.isPast || false} className="size-4 rounded border-line text-bal focus:ring-bal" />

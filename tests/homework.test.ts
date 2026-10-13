@@ -13,6 +13,11 @@ describe("homework validation", () => {
     expect(homeworkInputSchema.safeParse({ ...base, dueDate: "2026-10-04T12:00:00" }).success).toBe(false);
   });
 
+  it("accepts optional notDoneStudents text", () => {
+    expect(homeworkInputSchema.safeParse({ ...base, notDoneStudents: "Kerem uygur\ntoprak doğan" }).success).toBe(true);
+    expect(homeworkInputSchema.safeParse({ ...base, notDoneStudents: "a".repeat(5001) }).success).toBe(false);
+  });
+
   it("requires fixed subjects only for teacher writers", () => {
     expect(homeworkWriterInputSchema.safeParse({ name: "Matematik Öğretmeni", kind: "TEACHER", fixedSubject: "MATEMATIK" }).success).toBe(true);
     expect(homeworkWriterInputSchema.safeParse({ name: "Akıllı Tahta", kind: "SMART_BOARD", fixedSubject: null }).success).toBe(true);
@@ -66,5 +71,29 @@ describe("homework credential boundaries", () => {
     expect(getHomeworkDateStatus("2026-10-04", false, new Date("2026-10-04T12:00:00Z"))).toBe("today");
     expect(getHomeworkDateStatus("2026-10-05", false, new Date("2026-10-04T12:00:00Z"))).toBe("upcoming");
     expect(getHomeworkDateStatus("2026-10-05", true, new Date("2026-10-04T12:00:00Z"))).toBe("overdue");
+  });
+});
+
+describe("proxy redirect boundaries", () => {
+  it("never redirects /panel to itself when authenticated", async () => {
+    const { NextRequest } = await import("next/server");
+    const { proxy } = await import("../proxy");
+    const { HOMEWORK_WRITER_COOKIE } = await import("../lib/constants");
+
+    const panelReq = new NextRequest("http://localhost:3000/panel", {
+      headers: { cookie: `${HOMEWORK_WRITER_COOKIE}=some-session-token` },
+    });
+    const panelRes = await proxy(panelReq);
+    expect(panelRes.headers.get("location")).toBeNull();
+
+    const rootReqWithCookie = new NextRequest("http://localhost:3000/", {
+      headers: { cookie: `${HOMEWORK_WRITER_COOKIE}=some-session-token` },
+    });
+    const rootRes = await proxy(rootReqWithCookie);
+    expect(rootRes.headers.get("location")).toBe("http://localhost:3000/panel");
+
+    const rootReqNoCookie = new NextRequest("http://localhost:3000/");
+    const rootResNoCookie = await proxy(rootReqNoCookie);
+    expect(rootResNoCookie.headers.get("location")).toBeNull();
   });
 });

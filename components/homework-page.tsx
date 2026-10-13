@@ -304,6 +304,14 @@ function HomeworkCard({ item, manage = false, completed = false, onToggleComplet
       </div>
       <h2 className="mt-5 break-words text-lg font-black leading-snug">{item.title}</h2>
       {item.description ? <p className="mt-3 whitespace-pre-wrap break-words text-base leading-7 text-muted">{item.description}</p> : null}
+      {item.notDoneStudents ? (
+        <div className="mt-4 rounded-xl border border-red-200/80 bg-red-50/50 p-3.5 text-sm">
+          <p className="text-xs font-black uppercase tracking-wider text-red-800">Ödevi Yapmayanlar</p>
+          <p className="mt-1.5 whitespace-pre-wrap break-words font-medium leading-relaxed text-red-950">
+            {item.notDoneStudents}
+          </p>
+        </div>
+      ) : null}
       <div className="mt-auto flex min-w-0 flex-wrap items-center gap-3 pt-6 text-base">
         {item.isPast ? (
           <span className="inline-flex rounded-full bg-stone-200 px-2.5 py-1 text-[10px] font-black uppercase text-stone-700">Geçmiş</span>
@@ -328,6 +336,7 @@ function HomeworkEditorDialog({ writer, item = null, open: controlledOpen, onOpe
     const input = {
       title: String(data.get("title") || ""),
       description: String(data.get("description") || ""),
+      notDoneStudents: String(data.get("notDoneStudents") || ""),
       subject: String(data.get("subject") || "") as HomeworkDto["subject"],
       dueText: String(data.get("dueText") || ""),
       dueDate: String(data.get("dueDate") || ""),
@@ -353,6 +362,7 @@ function HomeworkEditorDialog({ writer, item = null, open: controlledOpen, onOpe
             <div><label className="label">Teslim <span className="font-normal text-muted">(isteğe bağlı)</span></label><input className="field" name="dueText" placeholder="Örn. ilk derse veya pazartesiye" defaultValue={item?.dueText || ""} maxLength={160} /></div>
             <div><label className="label">Sıralama tarihi <span className="font-normal text-muted">(isteğe bağlı)</span></label><input className="field" name="dueDate" type="date" defaultValue={item?.dueDate || ""} /></div>
             <div><label className="label">Açıklama <span className="font-normal text-muted">(isteğe bağlı)</span></label><textarea className="field min-h-28" name="description" defaultValue={item?.description || ""} maxLength={2000} /></div>
+            <div><label className="label">Ödevi yapmayanlar <span className="font-normal text-muted">(isteğe bağlı)</span></label><textarea className="field min-h-24" name="notDoneStudents" placeholder="Örn: Kerem uygur, toprak doğan..." defaultValue={item?.notDoneStudents || ""} maxLength={5000} /></div>
             <div>
               <label className="inline-flex items-center gap-2 text-sm font-bold text-ink">
                 <input type="checkbox" name="isPast" defaultChecked={item?.isPast || false} className="size-4 rounded border-line text-bal focus:ring-bal" />

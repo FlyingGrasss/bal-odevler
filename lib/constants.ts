@@ -16,6 +16,8 @@ export const HOMEWORK_SUBJECT_LABELS = Object.fromEntries(
   HOMEWORK_SUBJECT_OPTIONS.map((subject) => [subject.value, subject.label]),
 ) as Record<HomeworkSubject, string>;
 
+export const SESSION_COOKIE = "bal_odevler_session";
+
 export const HOMEWORK_WRITER_COOKIE = "bal_homework_writer";
 export const HOMEWORK_WRITER_SESSION_DAYS = 30;
 export const HOMEWORK_LOGIN_WINDOW_MS = 15 * 60 * 1000;

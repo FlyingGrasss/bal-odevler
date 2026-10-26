@@ -47,12 +47,19 @@ pnpm prisma migrate dev --name <aciklama>
 
 ## BAL ID OAuth kurulumu
 
-Yönetici girişi BAL ID üzerinden yapılır. BAL ID'nin Supabase projesinde OAuth Server etkin olmalıdır. Uygulamayı **confidential client** olarak kaydedin ve şu yönlendirme adreslerini ekleyin:
+Yönetici girişi BAL ID üzerinden authorization code + PKCE akışıyla yapılır. BAL ID'nin Supabase projesinde OAuth Server etkin olmalıdır. Uygulamayı **confidential client** olarak kaydedin ve şu yönlendirme adreslerini ekleyin:
 
 - Yerel: `http://localhost:3000/auth/callback`
 - Canlı: `https://odevler.balogrenci.org/auth/callback`
 
-`BAL_ID_ISSUER_URL` değeri `https://PROJECT_REF.supabase.co/auth/v1` biçimindedir. Uygulama authorization code + PKCE akışında `email profile` kapsamlarını ister.
+`BAL_ID_ISSUER_URL` değeri `https://PROJECT_REF.supabase.co/auth/v1` biçimindedir. Uygulama `email profile` kapsamlarını ister. Supabase bu kurulumda yalnızca PostgreSQL barındırıcısı ve BAL ID OAuth issuer'ı olarak kullanılır; uygulama Supabase Auth/SSR oturumu kullanmaz. Callback, oturumu uygulamaya ait `bal_odevler_session` çerezine yazar.
+
+### Yönetici oturumu
+
+- Çerez `bal_odevler_session` adıyla gönderilir; `HttpOnly`, production'da `Secure`, `SameSite=Lax`, `Path=/` ve 7 gün ömürlüdür.
+- Değer, `AUTH_SECRET` ile HMAC-SHA256 imzalanmış sürümlü bir tokendir ve `{ sub, exp }` taşır. Her kimlik doğrulanmış istekte imza yerelde doğrulanır; kullanıcı `sub` ile veritabanından yüklenir ve `BANNED` hesaplar reddedilir. Yöneticilik, veritabanındaki e-posta ile `ADMIN_EMAILS` karşılaştırılarak her istekte yeniden hesaplanır.
+- Çıkış `POST /auth/cikis` ile yapılır; 303 döner ve çerezi siler. `GET /auth/cikis` 405 döner. Çıkış yalnızca tarayıcıdaki çerezi siler; kopyalanmış bir token 7 günlük ömrü dolana veya `AUTH_SECRET` döndürülene kadar geçerli kalır. Sunucu tarafında oturum deposu yoktur. `BANNED` kullanıcılar hemen reddedilir çünkü `getCurrentUser` durumu her istekte veritabanından yeniden okur.
+- `AUTH_SECRET` aynı zamanda OAuth state'ini ve yazar anahtarı hash'lerini imzalar. Rotasyonu tüm yönetici oturumlarını ve tüm yazar QR anahtarlarını geçersiz kılar.
 
 ## Kontroller
 
@@ -71,6 +78,16 @@ alsın ve hiçbir düzen kaymasın.
 
 - `/layout` içindeki `SiteHeader` statiktir; sadece oturuma bağlı olan yönetici bağlantısı kendi
   `Suspense` sınırında akıtılır. Navbar önceden üretilmiş HTML'de bulunur, geç yüklenmez.
+- Yönetim (`app/admin/page.tsx`) kısmi (partial) bir rotadır: statik kabuk ilk boyamada yayınlanır,
+  oturum doğrulaması ve yönetici verisi kendi `Suspense` sınırında akıtılır. Rota artık
+  `instant = false` kullanmaz. Anonim `/admin` istekleri `proxy.ts` tarafından render başlamadan
+  gerçek bir 307 ile yönlendirilir; sayfa ve server action'lar yetkilendirmenin asıl sınırıdır.
+- Yönetici verisi `getHomeworkAdminData` içinde istek bazında render edilir; fonksiyon kendi
+  içinde `requireAdmin()` uygular ve `"use cache"` kullanmaz. Yalnızca herkese açık ödev verisi
+  `getPublicHomework` içinde `homework` etiketiyle önbelleğe alınır. Mutasyonlar `updateTag` ile
+  bu etiketi geçersiz kılar, böylece `/` bir sonraki istekte güncel veriyi görür (çok örnekli
+  ortamlarda kısa bir gecikme olabilir). Kimlik doğrulanmış `/admin` yanıtı yönetici verisi
+  içerdiğinden CDN'de ortak önbelleğe alınmamalıdır.
 - Ana sayfa (`app/page.tsx`) tamamlanan ödev çerezini okuduğu için `export const instant = false`
   ile engelleyici (blocking) rota olarak işaretlenmiştir. Böylece kartlar ilk HTML'de doğru
   boyutta gelir. Ödev verisinin kendisi `getPublicHomework` içinde `"use cache"` ile önbelleğe alınır,

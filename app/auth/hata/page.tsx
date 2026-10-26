@@ -15,6 +15,8 @@ function getMessage(kod: string | undefined): string {
       return "Giriş isteğinin süresi doldu. Lütfen yeniden başlayın.";
     case "kimlik-hatasi":
       return "BAL ID doğrulanmış kimlik bilgilerini paylaşamadı.";
+    case "token-hatasi":
+      return "BAL ID oturum anahtarı alınamadı. Lütfen yeniden deneyin.";
     case "yasakli-hesap":
       return "Bu hesap BAL Ödevler üzerinde yasaklanmış.";
     case "baglanti-hatasi":

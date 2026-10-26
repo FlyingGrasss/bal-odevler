@@ -3,6 +3,7 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/lib/db";
 import { CACHE_TAGS } from "@/lib/cache-tags";
+import { requireAdmin } from "@/lib/auth";
 import { getCurrentHomeworkWriter, type HomeworkWriterDto } from "@/lib/homework-auth";
 import { formatHomeworkDate } from "@/lib/homework-display";
 import type { HomeworkDto } from "@/lib/homework-types";
@@ -56,6 +57,7 @@ export async function getHomeworkWriterPageData() {
 }
 
 export async function getHomeworkAdminData() {
+  await requireAdmin();
   const [writers, homework] = await Promise.all([
     db.homeworkWriter.findMany({
       select: { id: true, name: true, kind: true, fixedSubject: true, isActive: true, lastLoginAt: true, createdAt: true },

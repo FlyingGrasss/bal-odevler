@@ -1,11 +1,8 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { authSecret } from "@/lib/auth-secret";
 
 export function homeworkSecret() {
-  const secret = process.env.AUTH_SECRET;
-  if (!secret && process.env.NODE_ENV === "production") {
-    throw new Error("AUTH_SECRET üretim ortamında tanımlanmalıdır.");
-  }
-  return secret ?? "bal-odevler-development-secret-change-me";
+  return authSecret();
 }
 
 export function hashHomeworkToken(token: string) {

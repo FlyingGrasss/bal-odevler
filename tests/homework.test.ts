@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { authSecret } from "../lib/auth-secret";
+import { SESSION_COOKIE } from "../lib/constants";
+import { createSessionToken } from "../lib/session-token";
 import { homeworkInputSchema, homeworkWriterInputSchema } from "../lib/validation";
 import { dateOnlyToDate, formatHomeworkDate, getHomeworkDateStatus } from "../lib/homework-display";
 import { COMPLETED_ID_LIMIT, encodeCompletedIds, parseCompletedIds, toggleCompletedId } from "../lib/homework-completed";
@@ -95,5 +98,61 @@ describe("proxy redirect boundaries", () => {
     const rootReqNoCookie = new NextRequest("http://localhost:3000/");
     const rootResNoCookie = await proxy(rootReqNoCookie);
     expect(rootResNoCookie.headers.get("location")).toBeNull();
+  });
+});
+
+describe("admin proxy authentication", () => {
+  async function requestFor(pathname: string, cookie?: string) {
+    const { NextRequest } = await import("next/server");
+    return new NextRequest(`http://localhost:3000${pathname}`, {
+      headers: cookie ? { cookie } : undefined,
+    });
+  }
+
+  function expectAdminRedirect(response: Response, expectedNext: string) {
+    expect(response.status).toBeGreaterThanOrEqual(300);
+    expect(response.status).toBeLessThan(400);
+    const location = response.headers.get("location");
+    expect(location).not.toBeNull();
+    const url = new URL(location!);
+    expect(url.pathname).toBe("/auth/bal-id");
+    expect(url.searchParams.get("next")).toBe(expectedNext);
+  }
+
+  it("redirects anonymous /admin requests to the admin login", async () => {
+    const { proxy } = await import("../proxy");
+    expectAdminRedirect(await proxy(await requestFor("/admin")), "/admin");
+  });
+
+  it("redirects requests with a garbage session cookie", async () => {
+    const { proxy } = await import("../proxy");
+    const response = await proxy(await requestFor("/admin", `${SESSION_COOKIE}=not-a-session-token`));
+    expectAdminRedirect(response, "/admin");
+  });
+
+  it("allows a valid admin session token", async () => {
+    const { proxy } = await import("../proxy");
+    const token = createSessionToken("admin-user", authSecret());
+    const response = await proxy(await requestFor("/admin", `${SESSION_COOKIE}=${token}`));
+    expect(response.status).toBeLessThan(300);
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("preserves the full admin pathname in the next parameter", async () => {
+    const { proxy } = await import("../proxy");
+    expectAdminRedirect(await proxy(await requestFor("/admin/alt")), "/admin/alt");
+  });
+
+  it("leaves the writer-root behavior unchanged on /", async () => {
+    const { proxy } = await import("../proxy");
+    const token = createSessionToken("admin-user", authSecret());
+
+    const adminRoot = await proxy(await requestFor("/", `${SESSION_COOKIE}=${token}`));
+    expect(adminRoot.status).toBe(200);
+    expect(adminRoot.headers.get("location")).toBeNull();
+
+    const anonymousRoot = await proxy(await requestFor("/"));
+    expect(anonymousRoot.status).toBe(200);
+    expect(anonymousRoot.headers.get("location")).toBeNull();
   });
 });

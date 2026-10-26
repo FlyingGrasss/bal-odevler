@@ -47,6 +47,18 @@ export function initials(name: string) {
 }
 
 export function appUrl(path = "") {
-  const base = (process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "");
+  const configured = process.env.APP_URL?.trim();
+  const previewHost = process.env.VERCEL_ENV === "preview" ? process.env.VERCEL_URL : undefined;
+  let base: string;
+  if (configured) {
+    base = configured;
+  } else if (previewHost) {
+    base = `https://${previewHost}`;
+  } else if (process.env.NODE_ENV === "production") {
+    throw new Error("APP_URL üretim ortamında tanımlanmalıdır.");
+  } else {
+    base = "http://localhost:3000";
+  }
+  base = base.replace(/\/$/, "");
   return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }

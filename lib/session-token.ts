@@ -2,7 +2,7 @@ import { Buffer } from "node:buffer";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const SESSION_VERSION = "v1";
-export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
 export type SessionClaims = { sub: string; exp: number };
 

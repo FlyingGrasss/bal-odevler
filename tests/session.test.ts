@@ -161,9 +161,9 @@ describe("session cookie", () => {
       secure: true,
       sameSite: "lax",
       path: "/",
-      maxAge: 604800,
+      maxAge: 31536000,
     });
-    expect(SESSION_MAX_AGE_SECONDS).toBe(604800);
+    expect(SESSION_MAX_AGE_SECONDS).toBe(31536000);
   });
 
   it("omits secure outside production and accepts a custom max age", () => {
@@ -172,7 +172,7 @@ describe("session cookie", () => {
       secure: false,
       sameSite: "lax",
       path: "/",
-      maxAge: 604800,
+      maxAge: 31536000,
     });
     expect(sessionCookieOptions(false, 120)).toMatchObject({
       httpOnly: true,

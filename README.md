@@ -56,9 +56,9 @@ Yönetici girişi BAL ID üzerinden authorization code + PKCE akışıyla yapıl
 
 ### Yönetici oturumu
 
-- Çerez `bal_odevler_session` adıyla gönderilir; `HttpOnly`, production'da `Secure`, `SameSite=Lax`, `Path=/` ve 7 gün ömürlüdür.
+- Çerez `bal_odevler_session` adıyla gönderilir; `HttpOnly`, production'da `Secure`, `SameSite=Lax`, `Path=/` ve 1 yıl (365 gün) ömürlüdür.
 - Değer, `AUTH_SECRET` ile HMAC-SHA256 imzalanmış sürümlü bir tokendir ve `{ sub, exp }` taşır. Her kimlik doğrulanmış istekte imza yerelde doğrulanır; kullanıcı `sub` ile veritabanından yüklenir ve `BANNED` hesaplar reddedilir. Yöneticilik, veritabanındaki e-posta ile `ADMIN_EMAILS` karşılaştırılarak her istekte yeniden hesaplanır.
-- Çıkış `POST /auth/cikis` ile yapılır; 303 döner ve çerezi siler. `GET /auth/cikis` 405 döner. Çıkış yalnızca tarayıcıdaki çerezi siler; kopyalanmış bir token 7 günlük ömrü dolana veya `AUTH_SECRET` döndürülene kadar geçerli kalır. Sunucu tarafında oturum deposu yoktur. `BANNED` kullanıcılar hemen reddedilir çünkü `getCurrentUser` durumu her istekte veritabanından yeniden okur.
+- Çıkış `POST /auth/cikis` ile yapılır; 303 döner ve çerezi siler. `GET /auth/cikis` 405 döner. Çıkış yalnızca tarayıcıdaki çerezi siler; kopyalanmış bir token 1 yıllık ömrü dolana veya `AUTH_SECRET` döndürülene kadar geçerli kalır. Sunucu tarafında oturum deposu yoktur. `BANNED` kullanıcılar hemen reddedilir çünkü `getCurrentUser` durumu her istekte veritabanından yeniden okur.
 - `AUTH_SECRET` aynı zamanda OAuth state'ini ve yazar anahtarı hash'lerini imzalar. Rotasyonu tüm yönetici oturumlarını ve tüm yazar QR anahtarlarını geçersiz kılar.
 
 ## Kontroller

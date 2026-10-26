@@ -17,11 +17,11 @@ BAL Ödevler, BAL Notes'tan ayrı bir Next.js uygulamasıdır ve `odevler.balogr
 
 ## Yönetici oturumu
 
-Yönetici kimliği BAL ID OAuth (authorization code + PKCE) ile doğrulanır. Callback, Supabase Auth/SSR oturumu yerine uygulamaya ait `bal_odevler_session` çerezini yazar. Çerez `HttpOnly`, production'da `Secure`, `SameSite=Lax`, `Path=/` ve 7 gün ömürlüdür.
+Yönetici kimliği BAL ID OAuth (authorization code + PKCE) ile doğrulanır. Callback, Supabase Auth/SSR oturumu yerine uygulamaya ait `bal_odevler_session` çerezini yazar. Çerez `HttpOnly`, production'da `Secure`, `SameSite=Lax`, `Path=/` ve 1 yıl (365 gün) ömürlüdür.
 
 Çerez değeri `AUTH_SECRET` ile HMAC-SHA256 imzalanmış sürümlü bir tokendir; `{ sub, exp }` taşır. `AUTH_SECRET` değerinin başında/sonunda boşluk bırakmayın; değer tam olarak kullanılır ve mevcut yazar anahtarı hash'leri bu değere bağlıdır. Her istekte imza yerelde doğrulanır, kullanıcı `sub` ile veritabanından yüklenir ve `BANNED` hesaplar reddedilir. Yöneticilik, veritabanındaki e-posta ile `ADMIN_EMAILS` karşılaştırılarak her istekte yeniden hesaplanır.
 
-Çıkış `POST /auth/cikis` ile yapılır; 303 döner ve çerezi siler. `GET /auth/cikis` 405 döner. Çıkış yalnızca tarayıcıdaki çerezi siler; kopyalanmış bir token 7 günlük ömrü dolana veya `AUTH_SECRET` döndürülene kadar geçerli kalır. Sunucu tarafında oturum deposu yoktur. `BANNED` kullanıcılar hemen reddedilir çünkü `getCurrentUser` durumu her istekte veritabanından yeniden okur. `AUTH_SECRET` aynı zamanda OAuth state'ini ve yazar anahtarı hash'lerini imzalar; rotasyonu tüm yönetici oturumlarını ve tüm yazar QR anahtarlarını geçersiz kılar.
+Çıkış `POST /auth/cikis` ile yapılır; 303 döner ve çerezi siler. `GET /auth/cikis` 405 döner. Çıkış yalnızca tarayıcıdaki çerezi siler; kopyalanmış bir token 1 yıllık ömrü dolana veya `AUTH_SECRET` döndürülene kadar geçerli kalır. Sunucu tarafında oturum deposu yoktur. `BANNED` kullanıcılar hemen reddedilir çünkü `getCurrentUser` durumu her istekte veritabanından yeniden okur. `AUTH_SECRET` aynı zamanda OAuth state'ini ve yazar anahtarı hash'lerini imzalar; rotasyonu tüm yönetici oturumlarını ve tüm yazar QR anahtarlarını geçersiz kılar.
 
 ## Veritabanı migration'ı
 
